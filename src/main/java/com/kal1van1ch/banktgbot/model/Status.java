@@ -1,4 +1,4 @@
-package com.kal1van1ch.banktgbot;
+package com.kal1van1ch.banktgbot.model;
 
 public enum Status {
     DEFAULT,
