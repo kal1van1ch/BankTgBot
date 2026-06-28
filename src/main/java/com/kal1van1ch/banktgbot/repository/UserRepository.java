@@ -5,8 +5,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+
 public interface UserRepository extends JpaRepository<User, Long> {
 
-    @Query("select u from User u where u.tgId = :tgId")
-    User containsTgId(@Param("tgId") String tgId);
+    @Query("select count(u) > 0 from User u where u.tgId = :tgId")
+    boolean containsTgId(@Param("tgId") String tgId);
 }
