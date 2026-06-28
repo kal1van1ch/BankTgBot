@@ -2,21 +2,21 @@ package com.kal1van1ch.banktgbot.service;
 
 import com.kal1van1ch.banktgbot.model.Status;
 import org.springframework.stereotype.Service;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
-public class ConsumerService {
+public class TransferService {
 
-    private final TelegramClient telegramClient;
     private final Map<String, String> inputInfoMap = new ConcurrentHashMap<>();
+    private final GeneralService generalService;
 
-    public ConsumerService(TelegramClient telegramClient){
-        this.telegramClient = telegramClient;
+    public TransferService(
+            GeneralService generalService
+    ){
+        this.generalService = generalService;
     }
 
     public void amountInputMessage(
@@ -24,7 +24,7 @@ public class ConsumerService {
             Map<Long, Status> statusMap
     ){
         String message = "Введите сумму для перевода в формате \"100\"";
-        sendMessage(chatId, message);
+        generalService.sendMessage(chatId, message);
         statusMap.put(chatId, Status.WAITING_FOR_NUMBER);
     }
 
@@ -36,7 +36,7 @@ public class ConsumerService {
         inputInfoMap.put("amount", text);
 
         String message = "Введите номер телефона для перевода в формате \"9161112233\"";
-        sendMessage(chatId, message);
+        generalService.sendMessage(chatId, message);
         statusMap.put(chatId, Status.WAITING_FOR_BANK);
     }
 
@@ -48,11 +48,11 @@ public class ConsumerService {
         inputInfoMap.put("phoneNumber", text);
 
         String message = "Введите банк для перевода в формате \"Тбанк, Сбербанк, Альфа-банк\"";
-        sendMessage(chatId, message);
+        generalService.sendMessage(chatId, message);
         statusMap.put(chatId, Status.TRANSFER_LINK);
     }
 
-    public void transferLinkHandler(
+    public void transferLinkMessage(
             long chatId,
             String text,
             Map<Long, Status> statusMap
@@ -67,31 +67,7 @@ public class ConsumerService {
             sb.append(String.format("%s : %s \n", key, val));
         }
 
-        sendMessage(chatId, sb.toString());
+        generalService.sendMessage(chatId, sb.toString());
         statusMap.put(chatId, Status.DEFAULT);
-    }
-
-    public void unknownMessage(
-            long chatId
-    ){
-        String message = "Неизвестная команда. Для перезапуска бота используйте команду /start";
-        sendMessage(chatId, message);
-    }
-
-    private void sendMessage(
-            long chatId,
-            String text
-    ){
-        SendMessage message = SendMessage
-                .builder()
-                .chatId(chatId)
-                .text(text)
-                .build();
-        try{
-            telegramClient.execute(message);
-        }
-        catch (TelegramApiException e){
-            e.printStackTrace();
-        }
     }
 }
