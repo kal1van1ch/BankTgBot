@@ -10,4 +10,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("select count(u) > 0 from User u where u.tgId = :tgId")
     boolean containsTgId(@Param("tgId") String tgId);
+
+    @Query("select u from User u where u.tgId = :tgId")
+    User getByTgId(@Param("tgId") String tgId);
 }

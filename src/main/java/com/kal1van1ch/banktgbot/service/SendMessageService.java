@@ -6,10 +6,10 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 @Service
-public class GeneralService {
+public class SendMessageService {
     private final TelegramClient telegramClient;
 
-    public GeneralService(TelegramClient telegramClient){
+    public SendMessageService(TelegramClient telegramClient){
         this.telegramClient = telegramClient;
     }
 

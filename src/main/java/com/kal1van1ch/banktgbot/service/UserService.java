@@ -17,22 +17,22 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
-public class RegisterService {
+public class UserService {
     private final UserRepository userRepository;
     private final Map<Long, UserDto> userRegisterData = new ConcurrentHashMap<>();
-    private final GeneralService generalService;
+    private final SendMessageService sendMessageService;
     private final UserMapper userMapper;
     private final UserValidation userValidation;
-    private static final Logger logger = LoggerFactory.getLogger(RegisterService.class);
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
-    public RegisterService(
+    public UserService(
             UserRepository userRepository,
-            GeneralService generalService,
+            SendMessageService sendMessageService,
             UserMapper userMapper,
             UserValidation userValidation
     ){
         this.userRepository = userRepository;
-        this.generalService = generalService;
+        this.sendMessageService = sendMessageService;
         this.userMapper = userMapper;
         this.userValidation = userValidation;
     }
@@ -47,7 +47,7 @@ public class RegisterService {
     ){
         userRegisterData.put(chatId, new UserDto());
         String message = "Введите своё имя";
-        generalService.sendMessage(chatId, message);
+        sendMessageService.sendMessage(chatId, message);
         statusMap.put(chatId, Status.WAITING_LAST_NAME);
     }
 
@@ -57,7 +57,7 @@ public class RegisterService {
             Map<Long, Status> statusMap
     ){
         if (!userValidation.isValidFirstName(text)){
-            generalService.sendMessage(chatId, "Имя введено неверно, попробуйте ещё раз");
+            sendMessageService.sendMessage(chatId, "Имя введено неверно, попробуйте ещё раз");
             logger.info("Пользователь из чата {} ввёл имя в неверном формате", chatId);
             return;
         }
@@ -66,7 +66,7 @@ public class RegisterService {
         user.setFirstName(text);
 
         String message = "Введите свою фамилию";
-        generalService.sendMessage(chatId, message);
+        sendMessageService.sendMessage(chatId, message);
         statusMap.put(chatId, Status.WAITING_PATRONYMIC);
     }
 
@@ -77,7 +77,7 @@ public class RegisterService {
     ){
 
         if(!userValidation.isValidLastName(text)){
-            generalService.sendMessage(chatId, "Фамилия введена неверно, попробуйте ещё раз");
+            sendMessageService.sendMessage(chatId, "Фамилия введена неверно, попробуйте ещё раз");
             logger.info("Пользователь из чата {} ввёл фамилию в неверном формате", chatId);
             return;
         }
@@ -86,7 +86,7 @@ public class RegisterService {
         user.setLastName(text);
 
         String message = "Введите своё отчество (при отсутствии введите \"-\")";
-        generalService.sendMessage(chatId, message);
+        sendMessageService.sendMessage(chatId, message);
         statusMap.put(chatId, Status.WAITING_PHONE_NUMBER);
     }
 
@@ -97,7 +97,7 @@ public class RegisterService {
     ){
 
         if (!userValidation.isValidPatronymic(text)){
-            generalService.sendMessage(chatId, "Отчество введено в неверном формате, попробуйте ещё раз");
+            sendMessageService.sendMessage(chatId, "Отчество введено в неверном формате, попробуйте ещё раз");
             logger.info("Пользователь из чата {} ввёл отчество в неверном формате", chatId);
             return;
         }
@@ -106,7 +106,7 @@ public class RegisterService {
         user.setPatronymic(text);
 
         String message = "Введите свой номер телефона в формате \"9161112233\"";
-        generalService.sendMessage(chatId, message);
+        sendMessageService.sendMessage(chatId, message);
         statusMap.put(chatId, Status.TRANSFER_SUCCESSFUL_REGISTRATION);
     }
 
@@ -119,7 +119,7 @@ public class RegisterService {
     ){
 
         if (!userValidation.isValidPhoneNumber(text)){
-            generalService.sendMessage(chatId, "Телефон введён неверно, попробуйте ещё раз");
+            sendMessageService.sendMessage(chatId, "Телефон введён неверно, попробуйте ещё раз");
             logger.info("Пользователь из чата {} ввёл номер телефона в неверном формате", chatId);
             return;
         }
@@ -133,17 +133,17 @@ public class RegisterService {
         try{
             userRepository.save(u);
 
-            generalService.sendMessage(chatId, "Регистрация прошла успешно");
+            sendMessageService.sendMessage(chatId, "Регистрация прошла успешно");
             statusMap.put(chatId, Status.DEFAULT);
 
             userRegisterData.remove(chatId);
         }
         catch (DataIntegrityViolationException e){
-            generalService.sendMessage(chatId, "Пользователь с таким id уже существует");
+            sendMessageService.sendMessage(chatId, "Пользователь с таким id уже существует");
             logger.info("Уже зарегистрированный пользователь {} предпринял попытку зарегистрироваться вновь", tgId);
         }
         catch (DataAccessException e){
-            generalService.sendMessage(chatId, "Не удалось зарегистрироваться. Попробуйте ещё раз позже");
+            sendMessageService.sendMessage(chatId, "Не удалось зарегистрироваться. Попробуйте ещё раз позже");
             logger.info("Не удалось занести данные пользователя {} в БД", tgId);
         }
     }
