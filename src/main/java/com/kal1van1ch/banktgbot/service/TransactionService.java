@@ -12,16 +12,19 @@ import com.kal1van1ch.banktgbot.validation.TransactionValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
-public class TransferService {
+public class TransactionService {
 
     private final Map<Long, TransactionDto> inputData = new ConcurrentHashMap<>();
     private final SendMessageService sendMessageService;
@@ -29,9 +32,9 @@ public class TransferService {
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
     private final TransactionValidation transactionValidation;
-    private static final Logger logger = LoggerFactory.getLogger(TransferService.class);
+    private static final Logger logger = LoggerFactory.getLogger(TransactionService.class);
 
-    public TransferService(
+    public TransactionService(
             SendMessageService sendMessageService,
             TransactionMapper transactionMapper,
             TransactionRepository transactionRepository,
@@ -90,8 +93,47 @@ public class TransferService {
         TransactionDto t = inputData.get(chatId);
         t.setPhoneNumber(text);
 
-        String message = "Введите банк для перевода в формате \"Тбанк, Сбербанк, Альфа-банк\"";
-        sendMessageService.sendMessage(chatId, message);
+        String message = "Выберите банк для перевода";
+
+        InlineKeyboardButton but1 = InlineKeyboardButton
+                .builder()
+                .text("Тбанк")
+                .callbackData("TBANK")
+                .build();
+
+        InlineKeyboardButton but2 = InlineKeyboardButton
+                .builder()
+                .text("Сбербанк")
+                .callbackData("SBER")
+                .build();
+
+        InlineKeyboardButton but3 = InlineKeyboardButton
+                .builder()
+                .text("Альфа-банк")
+                .callbackData("ALFA")
+                .build();
+
+        InlineKeyboardButton but4 = InlineKeyboardButton
+                .builder()
+                .text("Газпромбанк")
+                .callbackData("GPB")
+                .build();
+
+        List<InlineKeyboardRow> keyboardRows = List.of(
+                new InlineKeyboardRow(but1),
+                new InlineKeyboardRow(but2),
+                new InlineKeyboardRow(but3),
+                new InlineKeyboardRow(but4)
+        );
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup(keyboardRows);
+
+        sendMessageService.sendInlineButtonMessage(
+                chatId,
+                message,
+                markup
+        );
+
         statusMap.put(chatId, Status.TRANSFER_LINK);
     }
 
@@ -102,9 +144,15 @@ public class TransferService {
             Map<Long, Status> statusMap,
             String tgId
     ){
-
         TransactionDto t = inputData.get(chatId);
-        t.setBank(Bank.TBANK);
+
+        switch (text){
+            case "TBANK" -> t.setBank(Bank.TBANK);
+            case "SBER" -> t.setBank(Bank.SBERBANK);
+            case "ALFA" -> t.setBank(Bank.ALFABANK);
+            case "GPB" -> t.setBank(Bank.GAZPROMBANK);
+        }
+
         t.setDate(LocalDateTime.now());
 
         User u = userRepository.getByTgId(tgId);

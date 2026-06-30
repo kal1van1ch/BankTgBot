@@ -139,7 +139,7 @@ public class UserService {
             userRegisterData.remove(chatId);
         }
         catch (DataIntegrityViolationException e){
-            sendMessageService.sendMessage(chatId, "Пользователь с таким id уже существует");
+            sendMessageService.sendMessage(chatId, "Пользователь с таким id или номеров телефона уже существует");
             logger.info("Уже зарегистрированный пользователь {} предпринял попытку зарегистрироваться вновь", tgId);
         }
         catch (DataAccessException e){

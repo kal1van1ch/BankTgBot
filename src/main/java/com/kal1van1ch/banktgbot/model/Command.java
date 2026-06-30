@@ -5,7 +5,9 @@ import lombok.Getter;
 @Getter
 public enum Command {
     START("/start"),
-    RESTART("/restart");
+    RESTART("/restart"),
+    HELP("/help"),
+    REGISTER("/register");
 
     private final String command;
 
