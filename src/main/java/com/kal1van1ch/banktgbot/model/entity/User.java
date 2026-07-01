@@ -28,6 +28,6 @@ public class User {
     @Column(name = "patronymic")
     private String patronymic;
 
-    @Column(name = "phone_number", nullable = false, length = 10, unique = true)
+    @Column(name = "phone_number", nullable = false, length = 100, unique = true)
     private String phoneNumber;
 }

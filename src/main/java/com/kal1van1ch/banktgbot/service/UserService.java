@@ -1,5 +1,6 @@
 package com.kal1van1ch.banktgbot.service;
 
+import com.kal1van1ch.banktgbot.error.SHA256Exception;
 import com.kal1van1ch.banktgbot.mapper.UserMapper;
 import com.kal1van1ch.banktgbot.model.Status;
 import com.kal1van1ch.banktgbot.model.dto.UserDto;
@@ -124,19 +125,24 @@ public class UserService {
             return;
         }
 
-        UserDto user = userRegisterData.get(chatId);
-        user.setPhoneNumber(text);
-        user.setTgId(tgId);
-
-        User u = userMapper.toEntity(user);
 
         try{
+            UserDto user = userRegisterData.get(chatId);
+            String newPhoneNumber = sendMessageService.encodeDataToSha256(text);
+            user.setPhoneNumber(newPhoneNumber);
+            user.setTgId(tgId);
+
+            User u = userMapper.toEntity(user);
             userRepository.save(u);
 
             sendMessageService.sendMessage(chatId, "Регистрация прошла успешно");
             statusMap.put(chatId, Status.DEFAULT);
 
             userRegisterData.remove(chatId);
+        }
+        catch (SHA256Exception e){
+            logger.info("Ошибка при хэшировании данных в чате {} SHA-256", chatId, e);
+            sendMessageService.sendMessage(chatId, "Внутренняя ошибка, попробуйте снова позже");
         }
         catch (DataIntegrityViolationException e){
             sendMessageService.sendMessage(chatId, "Пользователь с таким id или номеров телефона уже существует");

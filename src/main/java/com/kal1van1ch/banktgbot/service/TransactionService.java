@@ -1,5 +1,6 @@
 package com.kal1van1ch.banktgbot.service;
 
+import com.kal1van1ch.banktgbot.error.SHA256Exception;
 import com.kal1van1ch.banktgbot.mapper.TransactionMapper;
 import com.kal1van1ch.banktgbot.model.Bank;
 import com.kal1van1ch.banktgbot.model.Status;
@@ -18,6 +19,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -82,7 +84,7 @@ public class TransactionService {
             long chatId,
             String text,
             Map<Long, Status> statusMap
-    ){
+    ) {
 
         if (!transactionValidation.isValidPhoneNumber(text)){
             sendMessageService.sendMessage(chatId, "Телефон введён неверно, попробуйте ещё раз");
@@ -90,51 +92,59 @@ public class TransactionService {
             return;
         }
 
-        TransactionDto t = inputData.get(chatId);
-        t.setPhoneNumber(text);
+        try{
+            String encodedPhoneNumber = sendMessageService.encodeDataToSha256(text);
+            TransactionDto t = inputData.get(chatId);
+            t.setPhoneNumber(encodedPhoneNumber);
 
-        String message = "Выберите банк для перевода";
+            String message = "Выберите банк для перевода";
 
-        InlineKeyboardButton but1 = InlineKeyboardButton
-                .builder()
-                .text("Тбанк")
-                .callbackData("TBANK")
-                .build();
+            InlineKeyboardButton but1 = InlineKeyboardButton
+                    .builder()
+                    .text("Тбанк")
+                    .callbackData("TBANK")
+                    .build();
 
-        InlineKeyboardButton but2 = InlineKeyboardButton
-                .builder()
-                .text("Сбербанк")
-                .callbackData("SBER")
-                .build();
+            InlineKeyboardButton but2 = InlineKeyboardButton
+                    .builder()
+                    .text("Сбербанк")
+                    .callbackData("SBER")
+                    .build();
 
-        InlineKeyboardButton but3 = InlineKeyboardButton
-                .builder()
-                .text("Альфа-банк")
-                .callbackData("ALFA")
-                .build();
+            InlineKeyboardButton but3 = InlineKeyboardButton
+                    .builder()
+                    .text("Альфа-банк")
+                    .callbackData("ALFA")
+                    .build();
 
-        InlineKeyboardButton but4 = InlineKeyboardButton
-                .builder()
-                .text("Газпромбанк")
-                .callbackData("GPB")
-                .build();
+            InlineKeyboardButton but4 = InlineKeyboardButton
+                    .builder()
+                    .text("Газпромбанк")
+                    .callbackData("GPB")
+                    .build();
 
-        List<InlineKeyboardRow> keyboardRows = List.of(
-                new InlineKeyboardRow(but1),
-                new InlineKeyboardRow(but2),
-                new InlineKeyboardRow(but3),
-                new InlineKeyboardRow(but4)
-        );
+            List<InlineKeyboardRow> keyboardRows = List.of(
+                    new InlineKeyboardRow(but1),
+                    new InlineKeyboardRow(but2),
+                    new InlineKeyboardRow(but3),
+                    new InlineKeyboardRow(but4)
+            );
 
-        InlineKeyboardMarkup markup = new InlineKeyboardMarkup(keyboardRows);
+            InlineKeyboardMarkup markup = new InlineKeyboardMarkup(keyboardRows);
 
-        sendMessageService.sendInlineButtonMessage(
-                chatId,
-                message,
-                markup
-        );
+            sendMessageService.sendInlineButtonMessage(
+                    chatId,
+                    message,
+                    markup
+            );
 
-        statusMap.put(chatId, Status.TRANSFER_LINK);
+            statusMap.put(chatId, Status.TRANSFER_LINK);
+        }
+
+        catch (SHA256Exception e){
+            logger.info("Ошибка при хэшировании данных в чате {} SHA-256", chatId, e);
+            sendMessageService.sendMessage(chatId, "Внутренняя ошибка, попробуйте снова позже");
+        }
     }
 
     @Transactional
