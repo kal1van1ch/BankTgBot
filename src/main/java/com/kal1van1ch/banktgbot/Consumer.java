@@ -3,6 +3,7 @@ package com.kal1van1ch.banktgbot;
 
 import com.kal1van1ch.banktgbot.model.Command;
 import com.kal1van1ch.banktgbot.model.Status;
+import com.kal1van1ch.banktgbot.service.EditUserService;
 import com.kal1van1ch.banktgbot.service.SendMessageService;
 import com.kal1van1ch.banktgbot.service.UserService;
 import com.kal1van1ch.banktgbot.service.TransactionService;
@@ -20,15 +21,18 @@ public class Consumer implements LongPollingSingleThreadUpdateConsumer {
     private final TransactionService transactionService;
     private final SendMessageService sendMessageService;
     private final UserService userService;
+    private final EditUserService editUserService;
 
     public Consumer(
             TransactionService transactionService,
             SendMessageService sendMessageService,
-            UserService userService
+            UserService userService,
+            EditUserService editUserService
     ) {
         this.transactionService = transactionService;
         this.sendMessageService = sendMessageService;
         this.userService = userService;
+        this.editUserService = editUserService;
     }
 
     @Override
@@ -75,8 +79,8 @@ public class Consumer implements LongPollingSingleThreadUpdateConsumer {
                         String.valueOf(update
                                 .getMessage()
                                 .getFrom()
-                                .getId())
-                )){
+                                .getId()))
+                ){
                     statusMap.put(chatId, Status.WAITING_FIRST_NAME);
                 }
                 else{
@@ -87,6 +91,22 @@ public class Consumer implements LongPollingSingleThreadUpdateConsumer {
             else if (text.equals(Command.HELP.getCommand())){
                 statusMap.put(chatId, Status.HELP);
                 sendMessageService.helpMessage(chatId, statusMap);
+            }
+
+            else if (text.equals(Command.EDIT.getCommand())){
+                if (!userService.isRegistered(String.valueOf(update
+                        .getMessage()
+                        .getFrom()
+                        .getId()))
+                ){
+                    sendMessageService.sendMessage(
+                            chatId,
+                            "Извините, вы не зарегистрированы. Для продолжения работы необходимо зарегистрироваться при помощи команды /register"
+                    );
+                }
+                else{
+                    statusMap.put(chatId, Status.EDIT);
+                }
             }
 
             else if (status == Status.DEFAULT){
@@ -125,6 +145,13 @@ public class Consumer implements LongPollingSingleThreadUpdateConsumer {
                     statusMap,
                     String.valueOf(tgId)
             );
+
+            case EDIT -> sendMessageService.editMessage(chatId, statusMap);
+            case EDIT_DATA -> editUserService.editData(chatId, text, statusMap);
+            case EDIT_FIRST_NAME -> editUserService.editFirstName(chatId, text, String.valueOf(tgId), statusMap);
+            case EDIT_LAST_NAME -> editUserService.editLastName(chatId, text, String.valueOf(tgId), statusMap);
+            case EDIT_PATRONYMIC -> editUserService.editPatronymic(chatId, text, String.valueOf(tgId), statusMap);
+            case EDIT_PHONE_NUMBER -> editUserService.editPhoneNumber(chatId, text, String.valueOf(tgId), statusMap);
         }
     }
 }

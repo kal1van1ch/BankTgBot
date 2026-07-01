@@ -24,7 +24,7 @@ public class UserService {
     private final SendMessageService sendMessageService;
     private final UserMapper userMapper;
     private final UserValidation userValidation;
-    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
+    private final static Logger logger = LoggerFactory.getLogger(UserService.class);
 
     public UserService(
             UserRepository userRepository,

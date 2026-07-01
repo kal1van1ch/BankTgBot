@@ -5,12 +5,15 @@ import com.kal1van1ch.banktgbot.model.Status;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -66,6 +69,7 @@ public class SendMessageService {
                 /start - запуск бота.
                 /restart - перезапуск бота.
                 /register - зарегистрироваться.
+                /edit - редактировать информацию о себе.
                 """;
 
         sendMessage(chatId, message);
@@ -118,5 +122,60 @@ public class SendMessageService {
             sb.append(hex);
         }
         return sb.toString();
+    }
+
+    public void editMessage(
+            long chatId,
+            Map<Long, Status> statusMap
+    ){
+        String message = "Выберите, что хотите изменить";
+
+        InlineKeyboardButton but1 = InlineKeyboardButton
+                .builder()
+                .text("Имя")
+                .callbackData("FIRST_NAME")
+                .build();
+
+        InlineKeyboardButton but2 = InlineKeyboardButton
+                .builder()
+                .text("Фамилия")
+                .callbackData("LAST_NAME")
+                .build();
+
+        InlineKeyboardButton but3 = InlineKeyboardButton
+                .builder()
+                .text("Отчество")
+                .callbackData("PATRONYMIC")
+                .build();
+
+        InlineKeyboardButton but4 = InlineKeyboardButton
+                .builder()
+                .text("Номер телефона")
+                .callbackData("PHONE_NUMBER")
+                .build();
+
+        InlineKeyboardButton but5 = InlineKeyboardButton
+                .builder()
+                .text("Ничего")
+                .callbackData("NOTHING")
+                .build();
+
+        List<InlineKeyboardRow> keyboardRows = List.of(
+                new InlineKeyboardRow(but1),
+                new InlineKeyboardRow(but2),
+                new InlineKeyboardRow(but3),
+                new InlineKeyboardRow(but4),
+                new InlineKeyboardRow(but5)
+        );
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup(keyboardRows);
+
+        sendInlineButtonMessage(
+                chatId,
+                message,
+                markup
+        );
+
+        statusMap.put(chatId, Status.EDIT_DATA);
     }
 }

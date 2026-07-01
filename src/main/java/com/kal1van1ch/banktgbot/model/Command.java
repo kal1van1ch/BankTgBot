@@ -7,7 +7,8 @@ public enum Command {
     START("/start"),
     RESTART("/restart"),
     HELP("/help"),
-    REGISTER("/register");
+    REGISTER("/register"),
+    EDIT("/edit");
 
     private final String command;
 
