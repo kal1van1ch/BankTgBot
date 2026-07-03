@@ -3,10 +3,7 @@ package com.kal1van1ch.banktgbot;
 
 import com.kal1van1ch.banktgbot.model.Command;
 import com.kal1van1ch.banktgbot.model.Status;
-import com.kal1van1ch.banktgbot.service.EditUserService;
-import com.kal1van1ch.banktgbot.service.SendMessageService;
-import com.kal1van1ch.banktgbot.service.UserService;
-import com.kal1van1ch.banktgbot.service.TransactionService;
+import com.kal1van1ch.banktgbot.service.*;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -22,17 +19,19 @@ public class Consumer implements LongPollingSingleThreadUpdateConsumer {
     private final SendMessageService sendMessageService;
     private final UserService userService;
     private final EditUserService editUserService;
+    private final DeleteService deleteService;
 
     public Consumer(
             TransactionService transactionService,
             SendMessageService sendMessageService,
             UserService userService,
-            EditUserService editUserService
-    ) {
+            EditUserService editUserService,
+            DeleteService deleteService) {
         this.transactionService = transactionService;
         this.sendMessageService = sendMessageService;
         this.userService = userService;
         this.editUserService = editUserService;
+        this.deleteService = deleteService;
     }
 
     @Override
@@ -109,9 +108,26 @@ public class Consumer implements LongPollingSingleThreadUpdateConsumer {
                 }
             }
 
+            else if (text.equals(Command.DELETE.getCommand())){
+                if (!userService.isRegistered(String.valueOf(update
+                        .getMessage()
+                        .getFrom()
+                        .getId()))
+                ){
+                    sendMessageService.sendMessage(
+                            chatId,
+                            "Извините, вы не зарегистрированы. Для продолжения работы необходимо зарегистрироваться при помощи команды /register"
+                    );
+                }
+                else{
+                    statusMap.put(chatId, Status.DELETE);
+                }
+            }
+
             else if (status == Status.DEFAULT){
                 sendMessageService.unknownMessage(chatId);
             }
+
         }
 
         else if (update.hasCallbackQuery()){
@@ -146,12 +162,24 @@ public class Consumer implements LongPollingSingleThreadUpdateConsumer {
                     String.valueOf(tgId)
             );
 
+
+
             case EDIT -> sendMessageService.editMessage(chatId, statusMap);
             case EDIT_DATA -> editUserService.editData(chatId, text, statusMap);
             case EDIT_FIRST_NAME -> editUserService.editFirstName(chatId, text, String.valueOf(tgId), statusMap);
             case EDIT_LAST_NAME -> editUserService.editLastName(chatId, text, String.valueOf(tgId), statusMap);
             case EDIT_PATRONYMIC -> editUserService.editPatronymic(chatId, text, String.valueOf(tgId), statusMap);
             case EDIT_PHONE_NUMBER -> editUserService.editPhoneNumber(chatId, text, String.valueOf(tgId), statusMap);
+
+
+
+            case DELETE -> deleteService.ifDelete(chatId, statusMap);
+            case DELETE_ACTION -> deleteService.delete(
+                    chatId,
+                    statusMap,
+                    text,
+                    String.valueOf(tgId)
+            );
         }
     }
 }

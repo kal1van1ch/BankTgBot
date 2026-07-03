@@ -8,7 +8,8 @@ public enum Command {
     RESTART("/restart"),
     HELP("/help"),
     REGISTER("/register"),
-    EDIT("/edit");
+    EDIT("/edit"),
+    DELETE("/delete");
 
     private final String command;
 
