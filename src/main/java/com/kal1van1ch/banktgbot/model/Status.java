@@ -2,10 +2,12 @@ package com.kal1van1ch.banktgbot.model;
 
 public enum Status {
     DEFAULT,
+    WAITING,
     WAITING_FOR_AMOUNT,
     WAITING_FOR_NUMBER,
     WAITING_FOR_BANK,
     TRANSFER_LINK,
+    MAKE_TRANSACTION,
     WAITING_FIRST_NAME,
     WAITING_LAST_NAME,
     WAITING_PATRONYMIC,

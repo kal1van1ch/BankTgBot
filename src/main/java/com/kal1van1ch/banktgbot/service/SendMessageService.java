@@ -181,4 +181,10 @@ public class SendMessageService {
 
         statusMap.put(chatId, Status.EDIT_DATA);
     }
+
+    public void waitMessage(
+            long chartId
+    ){
+        sendMessage(chartId, "Бот ожидает иное действие");
+    }
 }

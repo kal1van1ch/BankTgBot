@@ -1,6 +1,7 @@
 package com.kal1van1ch.banktgbot;
 
 
+import com.kal1van1ch.banktgbot.model.Bank;
 import com.kal1van1ch.banktgbot.model.Command;
 import com.kal1van1ch.banktgbot.model.Status;
 import com.kal1van1ch.banktgbot.service.*;
@@ -134,6 +135,9 @@ public class Consumer implements LongPollingSingleThreadUpdateConsumer {
             chatId = update.getCallbackQuery().getMessage().getChatId();
             text = update.getCallbackQuery().getData();
             tgId = update.getCallbackQuery().getFrom().getId();
+
+            if (Bank.isBank(text)) statusMap.put(chatId, Status.TRANSFER_LINK);
+            else if (text.equals("MAKE_TRANSACTION")) statusMap.put(chatId, Status.MAKE_TRANSACTION);
         }
 
         status = statusMap.getOrDefault(chatId, Status.DEFAULT);
@@ -142,9 +146,9 @@ public class Consumer implements LongPollingSingleThreadUpdateConsumer {
             case WAITING_FOR_AMOUNT -> transactionService.amountInputMessage(chatId, statusMap);
             case WAITING_FOR_NUMBER -> transactionService.numberInputMessage(chatId, text, statusMap);
             case WAITING_FOR_BANK -> transactionService.bankInputMessage(chatId, text, statusMap);
-            case TRANSFER_LINK -> transactionService.transferLinkMessage(
+            case TRANSFER_LINK -> transactionService.transferLinkMessage(chatId, text, statusMap);
+            case MAKE_TRANSACTION -> transactionService.makeTransaction(
                     chatId,
-                    text,
                     statusMap,
                     String.valueOf(tgId)
             );
@@ -180,6 +184,8 @@ public class Consumer implements LongPollingSingleThreadUpdateConsumer {
                     text,
                     String.valueOf(tgId)
             );
+
+            case WAITING -> sendMessageService.waitMessage(chatId);
         }
     }
 }

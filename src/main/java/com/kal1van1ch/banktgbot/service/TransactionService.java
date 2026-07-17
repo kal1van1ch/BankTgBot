@@ -97,7 +97,7 @@ public class TransactionService {
             TransactionDto t = inputData.get(chatId);
             t.setPhoneNumber(encodedPhoneNumber);
 
-            String message = "Выберите банк для перевода";
+            String message = "Выберите банк, с которого будет совершён перевод";
 
             InlineKeyboardButton but1 = InlineKeyboardButton
                     .builder()
@@ -138,7 +138,7 @@ public class TransactionService {
                     markup
             );
 
-            statusMap.put(chatId, Status.TRANSFER_LINK);
+            statusMap.put(chatId, Status.WAITING);
         }
 
         catch (SHA256Exception e){
@@ -151,8 +151,7 @@ public class TransactionService {
     public void transferLinkMessage(
             long chatId,
             String text,
-            Map<Long, Status> statusMap,
-            String tgId
+            Map<Long, Status> statusMap
     ){
         TransactionDto t = inputData.get(chatId);
 
@@ -163,12 +162,42 @@ public class TransactionService {
             case "GPB" -> t.setBank(Bank.GAZPROMBANK);
         }
 
-        t.setDate(LocalDateTime.now());
+        String message = "Нажмите на кнопку для перевода";
 
+        InlineKeyboardButton but1 = InlineKeyboardButton
+                .builder()
+                .text("Перевести")
+                .callbackData("MAKE_TRANSACTION")
+                .build();
+
+        List<InlineKeyboardRow> keyboardRows = List.of(
+                new InlineKeyboardRow(but1)
+        );
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup(keyboardRows);
+
+        sendMessageService.sendInlineButtonMessage(
+                chatId,
+                message,
+                markup
+        );
+
+        statusMap.put(chatId, Status.WAITING);
+    }
+
+    public void makeTransaction(
+            long chatId,
+            Map<Long, Status> statusMap,
+            String tgId
+    ){
+        TransactionDto t = inputData.get(chatId);
+
+        t.setDate(LocalDateTime.now());
         User u = userRepository.getByTgId(tgId);
         t.setUser(u);
 
         Transaction transaction = transactionMapper.toEntity(t);
+
         try{
             transactionRepository.save(transaction);
 
