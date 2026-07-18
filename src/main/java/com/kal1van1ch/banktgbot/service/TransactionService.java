@@ -19,7 +19,6 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 
-import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class TransactionService {
 
     private final Map<Long, TransactionDto> inputData = new ConcurrentHashMap<>();
-    private final SendMessageService sendMessageService;
+    private final GeneralMessageService generalMessageService;
     private final TransactionMapper transactionMapper;
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
@@ -37,13 +36,13 @@ public class TransactionService {
     private static final Logger logger = LoggerFactory.getLogger(TransactionService.class);
 
     public TransactionService(
-            SendMessageService sendMessageService,
+            GeneralMessageService generalMessageService,
             TransactionMapper transactionMapper,
             TransactionRepository transactionRepository,
             UserRepository userRepository,
             TransactionValidation transactionValidation
     ){
-        this.sendMessageService = sendMessageService;
+        this.generalMessageService = generalMessageService;
         this.transactionMapper = transactionMapper;
         this.transactionRepository = transactionRepository;
         this.userRepository = userRepository;
@@ -56,7 +55,7 @@ public class TransactionService {
     ){
         inputData.put(chatId, new TransactionDto());
         String message = "Введите сумму для перевода в формате \"100\"";
-        sendMessageService.sendMessage(chatId, message);
+        generalMessageService.sendMessage(chatId, message);
         statusMap.put(chatId, Status.WAITING_FOR_NUMBER);
     }
 
@@ -67,7 +66,7 @@ public class TransactionService {
     ){
 
         if (!transactionValidation.isValidAmount(text)){
-            sendMessageService.sendMessage(chatId, "Сумма введена некорректно, попробуйте ещё раз");
+            generalMessageService.sendMessage(chatId, "Сумма введена некорректно, попробуйте ещё раз");
             logger.info("Пользователь из чата {} ввёл сумму не в том формате", chatId);
             return;
         }
@@ -76,7 +75,7 @@ public class TransactionService {
         t.setAmount(Long.parseLong(text));
 
         String message = "Введите номер телефона для перевода в формате \"9161112233\"";
-        sendMessageService.sendMessage(chatId, message);
+        generalMessageService.sendMessage(chatId, message);
         statusMap.put(chatId, Status.WAITING_FOR_BANK);
     }
 
@@ -87,41 +86,22 @@ public class TransactionService {
     ) {
 
         if (!transactionValidation.isValidPhoneNumber(text)){
-            sendMessageService.sendMessage(chatId, "Телефон введён неверно, попробуйте ещё раз");
+            generalMessageService.sendMessage(chatId, "Телефон введён неверно, попробуйте ещё раз");
             logger.info("Пользователь из чата {} ввёл номер телефона не в том формате", chatId);
             return;
         }
 
         try{
-            String encodedPhoneNumber = sendMessageService.encodeDataToSha256(text);
+            String encodedPhoneNumber = generalMessageService.encodeDataToSha256(text);
             TransactionDto t = inputData.get(chatId);
             t.setPhoneNumber(encodedPhoneNumber);
 
             String message = "Выберите банк, с которого будет совершён перевод";
 
-            InlineKeyboardButton but1 = InlineKeyboardButton
-                    .builder()
-                    .text("Тбанк")
-                    .callbackData("TBANK")
-                    .build();
-
-            InlineKeyboardButton but2 = InlineKeyboardButton
-                    .builder()
-                    .text("Сбербанк")
-                    .callbackData("SBER")
-                    .build();
-
-            InlineKeyboardButton but3 = InlineKeyboardButton
-                    .builder()
-                    .text("Альфа-банк")
-                    .callbackData("ALFA")
-                    .build();
-
-            InlineKeyboardButton but4 = InlineKeyboardButton
-                    .builder()
-                    .text("Газпромбанк")
-                    .callbackData("GPB")
-                    .build();
+            InlineKeyboardButton but1 = generalMessageService.createButton(Bank.TBANK.getName(), Bank.TBANK.getCallbackData());
+            InlineKeyboardButton but2 = generalMessageService.createButton(Bank.SBERBANK.getName(), Bank.SBERBANK.getCallbackData());
+            InlineKeyboardButton but3 = generalMessageService.createButton(Bank.ALFABANK.getName(), Bank.ALFABANK.getCallbackData());
+            InlineKeyboardButton but4 = generalMessageService.createButton(Bank.GAZPROMBANK.getName(), Bank.GAZPROMBANK.getCallbackData());
 
             List<InlineKeyboardRow> keyboardRows = List.of(
                     new InlineKeyboardRow(but1),
@@ -132,7 +112,7 @@ public class TransactionService {
 
             InlineKeyboardMarkup markup = new InlineKeyboardMarkup(keyboardRows);
 
-            sendMessageService.sendInlineButtonMessage(
+            generalMessageService.sendInlineButtonMessage(
                     chatId,
                     message,
                     markup
@@ -143,7 +123,7 @@ public class TransactionService {
 
         catch (SHA256Exception e){
             logger.info("Ошибка при хэшировании данных в чате {} SHA-256", chatId, e);
-            sendMessageService.sendMessage(chatId, "Внутренняя ошибка, попробуйте снова позже");
+            generalMessageService.sendMessage(chatId, "Внутренняя ошибка, попробуйте снова позже");
         }
     }
 
@@ -156,19 +136,15 @@ public class TransactionService {
         TransactionDto t = inputData.get(chatId);
 
         switch (text){
-            case "TBANK" -> t.setBank(Bank.TBANK);
-            case "SBER" -> t.setBank(Bank.SBERBANK);
-            case "ALFA" -> t.setBank(Bank.ALFABANK);
-            case "GPB" -> t.setBank(Bank.GAZPROMBANK);
+            case "TBANK" -> t.setBankFrom(Bank.TBANK);
+            case "SBER" -> t.setBankFrom(Bank.SBERBANK);
+            case "ALFA" -> t.setBankFrom(Bank.ALFABANK);
+            case "GPB" -> t.setBankFrom(Bank.GAZPROMBANK);
         }
 
         String message = "Нажмите на кнопку для перевода";
 
-        InlineKeyboardButton but1 = InlineKeyboardButton
-                .builder()
-                .text("Перевести")
-                .callbackData("MAKE_TRANSACTION")
-                .build();
+        InlineKeyboardButton but1 = generalMessageService.createButton("Перевести", "MAKE_TRANSACTION");
 
         List<InlineKeyboardRow> keyboardRows = List.of(
                 new InlineKeyboardRow(but1)
@@ -176,7 +152,7 @@ public class TransactionService {
 
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup(keyboardRows);
 
-        sendMessageService.sendInlineButtonMessage(
+        generalMessageService.sendInlineButtonMessage(
                 chatId,
                 message,
                 markup
@@ -201,13 +177,13 @@ public class TransactionService {
         try{
             transactionRepository.save(transaction);
 
-            sendMessageService.sendMessage(chatId, "Транзакция прошла успешно");
+            generalMessageService.sendMessage(chatId, "Транзакция прошла успешно");
             statusMap.put(chatId, Status.DEFAULT);
 
             inputData.remove(chatId);
         }
         catch (DataAccessException e){
-            sendMessageService.sendMessage(chatId, "Не удалось сохранить историю транзакции.");
+            generalMessageService.sendMessage(chatId, "Не удалось сохранить историю транзакции.");
             logger.info("Не удалось занести данные о транзакции пользователя {} в БД", tgId);
         }
     }

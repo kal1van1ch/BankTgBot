@@ -17,10 +17,10 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class SendMessageService {
+public class GeneralMessageService {
     private final TelegramClient telegramClient;
 
-    public SendMessageService(TelegramClient telegramClient){
+    public GeneralMessageService(TelegramClient telegramClient){
         this.telegramClient = telegramClient;
     }
 
@@ -133,35 +133,11 @@ public class SendMessageService {
     ){
         String message = "Выберите, что хотите изменить";
 
-        InlineKeyboardButton but1 = InlineKeyboardButton
-                .builder()
-                .text("Имя")
-                .callbackData("FIRST_NAME")
-                .build();
-
-        InlineKeyboardButton but2 = InlineKeyboardButton
-                .builder()
-                .text("Фамилия")
-                .callbackData("LAST_NAME")
-                .build();
-
-        InlineKeyboardButton but3 = InlineKeyboardButton
-                .builder()
-                .text("Отчество")
-                .callbackData("PATRONYMIC")
-                .build();
-
-        InlineKeyboardButton but4 = InlineKeyboardButton
-                .builder()
-                .text("Номер телефона")
-                .callbackData("PHONE_NUMBER")
-                .build();
-
-        InlineKeyboardButton but5 = InlineKeyboardButton
-                .builder()
-                .text("Ничего")
-                .callbackData("NOTHING")
-                .build();
+        InlineKeyboardButton but1 = createButton("Имя", "FIRST_NAME");
+        InlineKeyboardButton but2 = createButton("Фамилия", "LAST_NAME");
+        InlineKeyboardButton but3 = createButton("Отчество", "PATRONYMIC");
+        InlineKeyboardButton but4 = createButton("Номер телефона", "PHONE_NUMBER");
+        InlineKeyboardButton but5 = createButton("Ничего", "NOTHING");
 
         List<InlineKeyboardRow> keyboardRows = List.of(
                 new InlineKeyboardRow(but1),
@@ -186,5 +162,16 @@ public class SendMessageService {
             long chartId
     ){
         sendMessage(chartId, "Бот ожидает иное действие");
+    }
+
+    public InlineKeyboardButton createButton(
+            String text,
+            String callback
+    ){
+        return InlineKeyboardButton
+                .builder()
+                .text(text)
+                .callbackData(callback)
+                .build();
     }
 }

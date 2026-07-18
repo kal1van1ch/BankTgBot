@@ -14,17 +14,17 @@ import java.util.Map;
 
 @Service
 public class EditUserService {
-    private final SendMessageService sendMessageService;
+    private final GeneralMessageService generalMessageService;
     private final UserValidation userValidation;
     private final static Logger logger = LoggerFactory.getLogger(EditUserService.class);
     private final UserRepository userRepository;
 
     public EditUserService(
-            SendMessageService sendMessageService,
+            GeneralMessageService generalMessageService,
             UserValidation userValidation,
             UserRepository userRepository
     ){
-        this.sendMessageService = sendMessageService;
+        this.generalMessageService = generalMessageService;
         this.userValidation = userValidation;
         this.userRepository = userRepository;
     }
@@ -36,23 +36,23 @@ public class EditUserService {
     ){
         switch (text){
             case "FIRST_NAME" -> {
-                sendMessageService.sendMessage(chatId, "Введите новое имя");
+                generalMessageService.sendMessage(chatId, "Введите новое имя");
                 statusMap.put(chatId, Status.EDIT_FIRST_NAME);
             }
             case "LAST_NAME" -> {
-                sendMessageService.sendMessage(chatId, "Введите новую фамилию");
+                generalMessageService.sendMessage(chatId, "Введите новую фамилию");
                 statusMap.put(chatId, Status.EDIT_LAST_NAME);
             }
             case "PATRONYMIC" -> {
-                sendMessageService.sendMessage(chatId, "Введите новое отчество");
+                generalMessageService.sendMessage(chatId, "Введите новое отчество");
                 statusMap.put(chatId, Status.EDIT_PATRONYMIC);
             }
             case "PHONE_NUMBER" -> {
-                sendMessageService.sendMessage(chatId, "Введите новый номер телефона");
+                generalMessageService.sendMessage(chatId, "Введите новый номер телефона");
                 statusMap.put(chatId, Status.EDIT_PHONE_NUMBER);
             }
             case "NOTHING" -> {
-                sendMessageService.sendMessage(chatId, "Редактирование данных отменено");
+                generalMessageService.sendMessage(chatId, "Редактирование данных отменено");
                 statusMap.put(chatId, Status.DEFAULT);
             }
         }
@@ -66,7 +66,7 @@ public class EditUserService {
             Map<Long, Status> statusMap
     ){
         if (!userValidation.isValidFirstName(text)){
-            sendMessageService.sendMessage(chatId, "Имя введено неверно, попробуйте ещё раз");
+            generalMessageService.sendMessage(chatId, "Имя введено неверно, попробуйте ещё раз");
             logger.info("Пользователь из чата {} ввёл имя в неверном формате", chatId);
             return;
         }
@@ -75,18 +75,18 @@ public class EditUserService {
             User user = userRepository.getByTgId(tgId);
             user.setFirstName(text);
             userRepository.flush();
-            sendMessageService.sendMessage(chatId, "Имя успешно изменено");
+            generalMessageService.sendMessage(chatId, "Имя успешно изменено");
         }
         catch (DataIntegrityViolationException e){
             logger.error("Ошибка при обновлении имени пользователя с tgId {}", tgId, e);
-            sendMessageService.sendMessage(chatId, "Ошибка при обновлении имени, попробуйте в другой раз");
+            generalMessageService.sendMessage(chatId, "Ошибка при обновлении имени, попробуйте в другой раз");
         }
         catch (Exception e) {
             logger.error("Критическая ошибка базы данных: ", e);
-            sendMessageService.sendMessage(chatId, "Сервис временно недоступен. Попробуйте позже");
+            generalMessageService.sendMessage(chatId, "Сервис временно недоступен. Попробуйте позже");
         }
         statusMap.put(chatId, Status.DEFAULT);
-        sendMessageService.editMessage(chatId, statusMap);
+        generalMessageService.editMessage(chatId, statusMap);
     }
 
     @Transactional
@@ -97,7 +97,7 @@ public class EditUserService {
             Map<Long, Status> statusMap
     ){
         if (!userValidation.isValidLastName(text)){
-            sendMessageService.sendMessage(chatId, "Фамилия введена неверно, попробуйте ещё раз");
+            generalMessageService.sendMessage(chatId, "Фамилия введена неверно, попробуйте ещё раз");
             logger.info("Пользователь из чата {} ввёл фамилию в неверном формате", chatId);
             return;
         }
@@ -105,18 +105,18 @@ public class EditUserService {
             User user = userRepository.getByTgId(tgId);
             user.setLastName(text);
             userRepository.flush();
-            sendMessageService.sendMessage(chatId, "Фамилия успешно изменена");
+            generalMessageService.sendMessage(chatId, "Фамилия успешно изменена");
         }
         catch (DataIntegrityViolationException e){
             logger.error("Ошибка при обновлении фамилии пользователя с tgIg {}", tgId, e);
-            sendMessageService.sendMessage(chatId, "Ошибка при обновлении фамилии, попробуйте в другой раз");
+            generalMessageService.sendMessage(chatId, "Ошибка при обновлении фамилии, попробуйте в другой раз");
         }
         catch (Exception e) {
             logger.error("Критическая ошибка базы данных: ", e);
-            sendMessageService.sendMessage(chatId, "Сервис временно недоступен. Попробуйте позже");
+            generalMessageService.sendMessage(chatId, "Сервис временно недоступен. Попробуйте позже");
         }
         statusMap.put(chatId, Status.DEFAULT);
-        sendMessageService.editMessage(chatId, statusMap);
+        generalMessageService.editMessage(chatId, statusMap);
     }
 
     @Transactional
@@ -127,7 +127,7 @@ public class EditUserService {
             Map<Long, Status> statusMap
     ){
         if (!userValidation.isValidPatronymic(text)){
-            sendMessageService.sendMessage(chatId, "Отчество введено неверно, попробуйте ещё раз");
+            generalMessageService.sendMessage(chatId, "Отчество введено неверно, попробуйте ещё раз");
             logger.info("Пользователь из чата {} ввёл отчество в неверном формате", chatId);
             return;
         }
@@ -136,18 +136,18 @@ public class EditUserService {
             User user = userRepository.getByTgId(tgId);
             user.setPatronymic(text);
             userRepository.flush();
-            sendMessageService.sendMessage(chatId, "Отчество успешно изменено");
+            generalMessageService.sendMessage(chatId, "Отчество успешно изменено");
         }
         catch (DataIntegrityViolationException e){
             logger.error("Ошибка при обновлении отчества пользователя с tgIg {}", tgId, e);
-            sendMessageService.sendMessage(chatId, "Ошибка при обновлении отчества, попробуйте в другой раз");
+            generalMessageService.sendMessage(chatId, "Ошибка при обновлении отчества, попробуйте в другой раз");
         }
         catch (Exception e) {
             logger.error("Критическая ошибка базы данных: ", e);
-            sendMessageService.sendMessage(chatId, "Сервис временно недоступен. Попробуйте позже");
+            generalMessageService.sendMessage(chatId, "Сервис временно недоступен. Попробуйте позже");
         }
         statusMap.put(chatId, Status.DEFAULT);
-        sendMessageService.editMessage(chatId, statusMap);
+        generalMessageService.editMessage(chatId, statusMap);
     }
 
     @Transactional
@@ -158,7 +158,7 @@ public class EditUserService {
             Map<Long, Status> statusMap
     ){
         if (!userValidation.isValidPhoneNumber(text)){
-            sendMessageService.sendMessage(chatId, "Номер телефона введён неверно, попробуйте ещё раз");
+            generalMessageService.sendMessage(chatId, "Номер телефона введён неверно, попробуйте ещё раз");
             logger.info("Пользователь из чата {} ввёл номер телефона в неверном формате", chatId);
             return;
         }
@@ -166,22 +166,22 @@ public class EditUserService {
         try{
             User user = userRepository.getByTgId(tgId);
 
-            String newPhoneNumber = sendMessageService.encodeDataToSha256(text);
+            String newPhoneNumber = generalMessageService.encodeDataToSha256(text);
 
             user.setPhoneNumber(newPhoneNumber);
             userRepository.flush();
 
-            sendMessageService.sendMessage(chatId, "Номер телефона успешно изменён");
+            generalMessageService.sendMessage(chatId, "Номер телефона успешно изменён");
         }
         catch (DataIntegrityViolationException e){
             logger.error("Ошибка при обновлении номера телефона пользователя с tgIg {}", tgId, e);
-            sendMessageService.sendMessage(chatId, "Ошибка при обновлении номера телефона, попробуйте в другой раз");
+            generalMessageService.sendMessage(chatId, "Ошибка при обновлении номера телефона, попробуйте в другой раз");
         }
         catch (Exception e) {
             logger.error("Критическая ошибка базы данных: ", e);
-            sendMessageService.sendMessage(chatId, "Сервис временно недоступен. Попробуйте позже");
+            generalMessageService.sendMessage(chatId, "Сервис временно недоступен. Попробуйте позже");
         }
         statusMap.put(chatId, Status.DEFAULT);
-        sendMessageService.editMessage(chatId, statusMap);
+        generalMessageService.editMessage(chatId, statusMap);
     }
 }

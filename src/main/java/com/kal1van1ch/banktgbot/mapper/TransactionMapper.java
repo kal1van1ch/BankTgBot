@@ -12,7 +12,7 @@ public class TransactionMapper {
         trans.setUser(t.getUser());
         trans.setAmount(t.getAmount());
         trans.setPhoneNumber(t.getPhoneNumber());
-        trans.setBank(t.getBank());
+        trans.setBankFrom(t.getBankFrom());
         trans.setDate(t.getDate());
 
         return trans;
@@ -25,7 +25,7 @@ public class TransactionMapper {
         trans.setUser(t.getUser());
         trans.setAmount(t.getAmount());
         trans.setPhoneNumber(t.getPhoneNumber());
-        trans.setBank(t.getBank());
+        trans.setBankFrom(t.getBankFrom());
         trans.setDate(t.getDate());
 
         return trans;

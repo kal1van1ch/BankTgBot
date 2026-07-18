@@ -4,14 +4,16 @@ import lombok.Getter;
 
 @Getter
 public enum Bank {
-    TBANK("TBANK"),
-    SBERBANK("SBER"),
-    ALFABANK("ALFA"),
-    GAZPROMBANK("GPB");
+    TBANK("Тбанк", "TBANK"),
+    SBERBANK("Сбербанк", "SBER"),
+    ALFABANK("Альфа-банк", "ALFA"),
+    GAZPROMBANK("Газпромбанк", "GPB");
 
+    private final String name;
     private final String callbackData;
 
-    Bank(String callbackData){
+    Bank(String name, String callbackData){
+        this.name = name;
         this.callbackData = callbackData;
     }
 

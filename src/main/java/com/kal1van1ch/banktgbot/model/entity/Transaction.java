@@ -19,6 +19,7 @@ public class Transaction {
     @Column(name = "id", nullable = false)
     private Long id;
 
+    @ToString.Exclude
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sender", nullable = false)
     private User user;
@@ -31,7 +32,7 @@ public class Transaction {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "bank", nullable = false)
-    private Bank bank;
+    private Bank bankFrom;
 
     @Column(name = "date", nullable = false)
     private LocalDateTime date;

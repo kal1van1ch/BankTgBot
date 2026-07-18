@@ -18,6 +18,6 @@ public class TransactionDto {
     private User user;
     private Long amount;
     private String phoneNumber;
-    private Bank bank;
+    private Bank bankFrom;
     private LocalDateTime date;
 }

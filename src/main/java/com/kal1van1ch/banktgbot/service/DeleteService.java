@@ -18,17 +18,17 @@ import java.util.Map;
 @Service
 public class DeleteService {
 
-    private final SendMessageService sendMessageService;
+    private final GeneralMessageService generalMessageService;
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
     private final static Logger logger = LoggerFactory.getLogger(DeleteService.class);
 
     public DeleteService(
-            SendMessageService sendMessageService,
+            GeneralMessageService generalMessageService,
             TransactionRepository transactionRepository,
             UserRepository userRepository
     ){
-        this.sendMessageService = sendMessageService;
+        this.generalMessageService = generalMessageService;
         this.transactionRepository = transactionRepository;
         this.userRepository = userRepository;
     }
@@ -39,17 +39,8 @@ public class DeleteService {
     ){
         String message = "Вы уверены, что хотите удалить свой аккаунт? При удалении вся история транзакций будет безвозвратно удалена";
 
-        InlineKeyboardButton but1 = InlineKeyboardButton
-                .builder()
-                .text("Да")
-                .callbackData("YES")
-                .build();
-
-        InlineKeyboardButton but2 = InlineKeyboardButton
-                .builder()
-                .text("Нет")
-                .callbackData("NO")
-                .build();
+        InlineKeyboardButton but1 = generalMessageService.createButton("Да", "YES");
+        InlineKeyboardButton but2 = generalMessageService.createButton("Нет", "NO");
 
         List<InlineKeyboardRow> keyboardRows = List.of(
                 new InlineKeyboardRow(but1),
@@ -58,7 +49,7 @@ public class DeleteService {
 
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup(keyboardRows);
 
-        sendMessageService.sendInlineButtonMessage(
+        generalMessageService.sendInlineButtonMessage(
                 chatId,
                 message,
                 markup
@@ -75,7 +66,7 @@ public class DeleteService {
             String tgId
     ){
         if (text.equals("NO")){
-            sendMessageService.sendMessage(chatId, "Удаление аккаунта отменено");
+            generalMessageService.sendMessage(chatId, "Удаление аккаунта отменено");
         }
         else{
             try{
@@ -83,11 +74,11 @@ public class DeleteService {
                 transactionRepository.deleteByUser(user);
                 userRepository.delete(user);
 
-                sendMessageService.sendMessage(chatId, "Аккаунт был успешно удалён");
+                generalMessageService.sendMessage(chatId, "Аккаунт был успешно удалён");
             }
             catch (Exception e){
                 logger.error("При попытке удалить пользователя с tgId {} произошла внутренняя ошибка", tgId, e);
-                sendMessageService.sendMessage(chatId, "Произошла внутрення ошибка");
+                generalMessageService.sendMessage(chatId, "Произошла внутрення ошибка");
             }
         }
         statusMap.put(chatId, Status.DEFAULT);

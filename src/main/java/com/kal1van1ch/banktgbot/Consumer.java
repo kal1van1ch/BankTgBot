@@ -17,19 +17,19 @@ public class Consumer implements LongPollingSingleThreadUpdateConsumer {
 
     private final Map<Long, Status> statusMap = new ConcurrentHashMap<>();
     private final TransactionService transactionService;
-    private final SendMessageService sendMessageService;
+    private final GeneralMessageService generalMessageService;
     private final UserService userService;
     private final EditUserService editUserService;
     private final DeleteService deleteService;
 
     public Consumer(
             TransactionService transactionService,
-            SendMessageService sendMessageService,
+            GeneralMessageService generalMessageService,
             UserService userService,
             EditUserService editUserService,
             DeleteService deleteService) {
         this.transactionService = transactionService;
-        this.sendMessageService = sendMessageService;
+        this.generalMessageService = generalMessageService;
         this.userService = userService;
         this.editUserService = editUserService;
         this.deleteService = deleteService;
@@ -63,7 +63,7 @@ public class Consumer implements LongPollingSingleThreadUpdateConsumer {
                                         .getFrom()
                                         .getId())
                 )){
-                    sendMessageService.sendMessage(
+                    generalMessageService.sendMessage(
                             chatId,
                             "Извините, вы не зарегистрированы. Для продолжения работы необходимо зарегистрироваться при помощи команды /register"
                     );
@@ -84,13 +84,13 @@ public class Consumer implements LongPollingSingleThreadUpdateConsumer {
                     statusMap.put(chatId, Status.WAITING_FIRST_NAME);
                 }
                 else{
-                    sendMessageService.sendMessage(chatId, "Вы уже зарегистрированы");
+                    generalMessageService.sendMessage(chatId, "Вы уже зарегистрированы");
                 }
             }
 
             else if (text.equals(Command.HELP.getCommand())){
                 statusMap.put(chatId, Status.HELP);
-                sendMessageService.helpMessage(chatId, statusMap);
+                generalMessageService.helpMessage(chatId, statusMap);
             }
 
             else if (text.equals(Command.EDIT.getCommand())){
@@ -99,7 +99,7 @@ public class Consumer implements LongPollingSingleThreadUpdateConsumer {
                         .getFrom()
                         .getId()))
                 ){
-                    sendMessageService.sendMessage(
+                    generalMessageService.sendMessage(
                             chatId,
                             "Извините, вы не зарегистрированы. Для продолжения работы необходимо зарегистрироваться при помощи команды /register"
                     );
@@ -115,7 +115,7 @@ public class Consumer implements LongPollingSingleThreadUpdateConsumer {
                         .getFrom()
                         .getId()))
                 ){
-                    sendMessageService.sendMessage(
+                    generalMessageService.sendMessage(
                             chatId,
                             "Извините, вы не зарегистрированы. Для продолжения работы необходимо зарегистрироваться при помощи команды /register"
                     );
@@ -126,7 +126,7 @@ public class Consumer implements LongPollingSingleThreadUpdateConsumer {
             }
 
             else if (status == Status.DEFAULT){
-                sendMessageService.unknownMessage(chatId);
+                generalMessageService.unknownMessage(chatId);
             }
 
         }
@@ -168,7 +168,7 @@ public class Consumer implements LongPollingSingleThreadUpdateConsumer {
 
 
 
-            case EDIT -> sendMessageService.editMessage(chatId, statusMap);
+            case EDIT -> generalMessageService.editMessage(chatId, statusMap);
             case EDIT_DATA -> editUserService.editData(chatId, text, statusMap);
             case EDIT_FIRST_NAME -> editUserService.editFirstName(chatId, text, String.valueOf(tgId), statusMap);
             case EDIT_LAST_NAME -> editUserService.editLastName(chatId, text, String.valueOf(tgId), statusMap);
@@ -185,7 +185,7 @@ public class Consumer implements LongPollingSingleThreadUpdateConsumer {
                     String.valueOf(tgId)
             );
 
-            case WAITING -> sendMessageService.waitMessage(chatId);
+            case WAITING -> generalMessageService.waitMessage(chatId);
         }
     }
 }
