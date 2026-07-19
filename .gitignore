@@ -31,3 +31,15 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Секреты и конфигурации (защита от утечек) ###
+.env
+application-local.properties
+application-dev.properties
+
+### Логи ###
+*.log
+
+### Системный мусор ОС ###
+.DS_Store
+Thumbs.db

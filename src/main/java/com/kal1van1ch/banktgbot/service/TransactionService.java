@@ -98,10 +98,10 @@ public class TransactionService {
 
             String message = "Выберите банк, с которого будет совершён перевод";
 
-            InlineKeyboardButton but1 = generalMessageService.createButton(Bank.TBANK.getName(), Bank.TBANK.getCallbackData());
-            InlineKeyboardButton but2 = generalMessageService.createButton(Bank.SBERBANK.getName(), Bank.SBERBANK.getCallbackData());
-            InlineKeyboardButton but3 = generalMessageService.createButton(Bank.ALFABANK.getName(), Bank.ALFABANK.getCallbackData());
-            InlineKeyboardButton but4 = generalMessageService.createButton(Bank.GAZPROMBANK.getName(), Bank.GAZPROMBANK.getCallbackData());
+            InlineKeyboardButton but1 = generalMessageService.createButtonWithCallbackData(Bank.TBANK.getName(), Bank.TBANK.getCallbackData());
+            InlineKeyboardButton but2 = generalMessageService.createButtonWithCallbackData(Bank.SBERBANK.getName(), Bank.SBERBANK.getCallbackData());
+            InlineKeyboardButton but3 = generalMessageService.createButtonWithCallbackData(Bank.ALFABANK.getName(), Bank.ALFABANK.getCallbackData());
+            InlineKeyboardButton but4 = generalMessageService.createButtonWithCallbackData(Bank.GAZPROMBANK.getName(), Bank.GAZPROMBANK.getCallbackData());
 
             List<InlineKeyboardRow> keyboardRows = List.of(
                     new InlineKeyboardRow(but1),
@@ -144,7 +144,17 @@ public class TransactionService {
 
         String message = "Нажмите на кнопку для перевода";
 
-        InlineKeyboardButton but1 = generalMessageService.createButton("Перевести", "MAKE_TRANSACTION");
+        /*
+         TODO: В текущей реализации используется заглушка для совершения транзакции.
+          Прямой вызов банковских deeplink-ссылок (tbank:// и др.) блокируется Telegram API
+          в целях безопасности. Использование промежуточной Web-страницы (через ngrok)
+          также ограничено: попытки автоматического перехода в банковское приложение
+          блокируются системой безопасности мобильной ОС (протестировано на Android).
+
+         Ожидаемая реализация: здесь должен быть реализован надежный механизм перевода
+         средств, учитывающий ограничения мобильных сред выполнения.
+         */
+        InlineKeyboardButton but1 = generalMessageService.createButtonWithCallbackData("Совершить перевод", "MAKE_TRANSACTION");
 
         List<InlineKeyboardRow> keyboardRows = List.of(
                 new InlineKeyboardRow(but1)
@@ -167,18 +177,17 @@ public class TransactionService {
             String tgId
     ){
         TransactionDto t = inputData.get(chatId);
-
-        t.setDate(LocalDateTime.now());
         User u = userRepository.getByTgId(tgId);
         t.setUser(u);
 
-        Transaction transaction = transactionMapper.toEntity(t);
-
         try{
+            t.setDate(LocalDateTime.now());
+            Transaction transaction = transactionMapper.toEntity(t);
+
             transactionRepository.save(transaction);
 
             generalMessageService.sendMessage(chatId, "Транзакция прошла успешно");
-            statusMap.put(chatId, Status.DEFAULT);
+
 
             inputData.remove(chatId);
         }
@@ -186,5 +195,6 @@ public class TransactionService {
             generalMessageService.sendMessage(chatId, "Не удалось сохранить историю транзакции.");
             logger.info("Не удалось занести данные о транзакции пользователя {} в БД", tgId);
         }
+        statusMap.put(chatId, Status.DEFAULT);
     }
 }

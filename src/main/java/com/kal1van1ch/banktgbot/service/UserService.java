@@ -136,7 +136,7 @@ public class UserService {
             userRepository.save(u);
 
             generalMessageService.sendMessage(chatId, "Регистрация прошла успешно");
-            statusMap.put(chatId, Status.DEFAULT);
+
 
             userRegisterData.remove(chatId);
         }
@@ -152,5 +152,6 @@ public class UserService {
             generalMessageService.sendMessage(chatId, "Не удалось зарегистрироваться. Попробуйте ещё раз позже");
             logger.info("Не удалось занести данные пользователя {} в БД", tgId);
         }
+        statusMap.put(chatId, Status.DEFAULT);
     }
 }

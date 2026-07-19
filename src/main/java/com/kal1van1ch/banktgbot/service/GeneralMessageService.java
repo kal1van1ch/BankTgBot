@@ -62,7 +62,7 @@ public class GeneralMessageService {
             Map<Long, Status> statusMap
     ){
         String message = """
-                Вас приветствует бот Bank, созданный для удобных операций по переводу средств без входа в банковское приложение.
+                Вас приветствует бот Bank, созданный для удобных операций по переводу денежных средств.
                 
                 Список команд:
                 /help - вывод общей информации о боте и списка команд.
@@ -133,11 +133,11 @@ public class GeneralMessageService {
     ){
         String message = "Выберите, что хотите изменить";
 
-        InlineKeyboardButton but1 = createButton("Имя", "FIRST_NAME");
-        InlineKeyboardButton but2 = createButton("Фамилия", "LAST_NAME");
-        InlineKeyboardButton but3 = createButton("Отчество", "PATRONYMIC");
-        InlineKeyboardButton but4 = createButton("Номер телефона", "PHONE_NUMBER");
-        InlineKeyboardButton but5 = createButton("Ничего", "NOTHING");
+        InlineKeyboardButton but1 = createButtonWithCallbackData("Имя", "FIRST_NAME");
+        InlineKeyboardButton but2 = createButtonWithCallbackData("Фамилия", "LAST_NAME");
+        InlineKeyboardButton but3 = createButtonWithCallbackData("Отчество", "PATRONYMIC");
+        InlineKeyboardButton but4 = createButtonWithCallbackData("Номер телефона", "PHONE_NUMBER");
+        InlineKeyboardButton but5 = createButtonWithCallbackData("Ничего", "NOTHING");
 
         List<InlineKeyboardRow> keyboardRows = List.of(
                 new InlineKeyboardRow(but1),
@@ -164,7 +164,7 @@ public class GeneralMessageService {
         sendMessage(chartId, "Бот ожидает иное действие");
     }
 
-    public InlineKeyboardButton createButton(
+    public InlineKeyboardButton createButtonWithCallbackData(
             String text,
             String callback
     ){
@@ -172,6 +172,17 @@ public class GeneralMessageService {
                 .builder()
                 .text(text)
                 .callbackData(callback)
+                .build();
+    }
+
+    public InlineKeyboardButton createButtonWithURL(
+            String text,
+            String url
+    ){
+        return InlineKeyboardButton
+                .builder()
+                .text(text)
+                .url(url)
                 .build();
     }
 }

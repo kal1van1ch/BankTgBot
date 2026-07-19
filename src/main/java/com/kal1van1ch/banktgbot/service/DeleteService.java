@@ -39,8 +39,8 @@ public class DeleteService {
     ){
         String message = "Вы уверены, что хотите удалить свой аккаунт? При удалении вся история транзакций будет безвозвратно удалена";
 
-        InlineKeyboardButton but1 = generalMessageService.createButton("Да", "YES");
-        InlineKeyboardButton but2 = generalMessageService.createButton("Нет", "NO");
+        InlineKeyboardButton but1 = generalMessageService.createButtonWithCallbackData("Да", "YES");
+        InlineKeyboardButton but2 = generalMessageService.createButtonWithCallbackData("Нет", "NO");
 
         List<InlineKeyboardRow> keyboardRows = List.of(
                 new InlineKeyboardRow(but1),
