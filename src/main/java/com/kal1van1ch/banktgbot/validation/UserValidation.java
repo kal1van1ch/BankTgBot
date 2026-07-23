@@ -16,8 +16,4 @@ public class UserValidation {
     public boolean isValidPatronymic(String patronymic){
         return patronymic.matches("^[а-яА-ЯёЁ]+$") || patronymic.equals("-");
     }
-
-    public boolean isValidPhoneNumber(String phoneNumber){
-        return phoneNumber.matches("^\\d{10}$");
-    }
 }

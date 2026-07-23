@@ -3,6 +3,7 @@ package com.kal1van1ch.banktgbot.service;
 import com.kal1van1ch.banktgbot.error.SHA256Exception;
 import com.kal1van1ch.banktgbot.mapper.TransactionMapper;
 import com.kal1van1ch.banktgbot.model.Bank;
+import com.kal1van1ch.banktgbot.model.Scenario;
 import com.kal1van1ch.banktgbot.model.Status;
 import com.kal1van1ch.banktgbot.model.dto.TransactionDto;
 import com.kal1van1ch.banktgbot.model.entity.Transaction;
@@ -67,14 +68,22 @@ public class TransactionService {
 
         if (!transactionValidation.isValidAmount(text)){
             generalMessageService.sendMessage(chatId, "Сумма введена некорректно, попробуйте ещё раз");
-            logger.info("Пользователь из чата {} ввёл сумму не в том формате", chatId);
+            logger.info("""
+                    \n
+                    ====================================================================================================
+                    Пользователь из чата ввёл сумму не в том формате
+                    Чат: {}
+                    Введённая сумма: {}
+                    ====================================================================================================
+                    \n
+                    """, chatId, text);
             return;
         }
 
         TransactionDto t = inputData.get(chatId);
         t.setAmount(Long.parseLong(text));
 
-        String message = "Введите номер телефона для перевода в формате \"9161112233\"";
+        String message = "Введите номер телефона для перевода в формате \"79161112233\"";
         generalMessageService.sendMessage(chatId, message);
         statusMap.put(chatId, Status.WAITING_FOR_BANK);
     }
@@ -87,7 +96,15 @@ public class TransactionService {
 
         if (!transactionValidation.isValidPhoneNumber(text)){
             generalMessageService.sendMessage(chatId, "Телефон введён неверно, попробуйте ещё раз");
-            logger.info("Пользователь из чата {} ввёл номер телефона не в том формате", chatId);
+            logger.info("""
+                    \n
+                    ====================================================================================================
+                    Пользователь из чата ввёл номер телефона не в том формате
+                    Чат: {}
+                    Введённый телефон: {}
+                    ====================================================================================================
+                    \n
+                    """, chatId, text);
             return;
         }
 
@@ -112,7 +129,7 @@ public class TransactionService {
 
             InlineKeyboardMarkup markup = new InlineKeyboardMarkup(keyboardRows);
 
-            generalMessageService.sendInlineButtonMessage(
+            generalMessageService.sendButtonMessage(
                     chatId,
                     message,
                     markup
@@ -122,7 +139,14 @@ public class TransactionService {
         }
 
         catch (SHA256Exception e){
-            logger.info("Ошибка при хэшировании данных в чате {} SHA-256", chatId, e);
+            logger.error("""
+                    \n
+                    ====================================================================================================
+                    Ошибка при хэшировании данных с помощью алгоритма SHA-256
+                    Чат: {}
+                    ====================================================================================================
+                    \n
+                    """, chatId, e);
             generalMessageService.sendMessage(chatId, "Внутренняя ошибка, попробуйте снова позже");
         }
     }
@@ -162,7 +186,7 @@ public class TransactionService {
 
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup(keyboardRows);
 
-        generalMessageService.sendInlineButtonMessage(
+        generalMessageService.sendButtonMessage(
                 chatId,
                 message,
                 markup
@@ -174,6 +198,7 @@ public class TransactionService {
     public void makeTransaction(
             long chatId,
             Map<Long, Status> statusMap,
+            Map<Long, Scenario> scenarioMap,
             String tgId
     ){
         TransactionDto t = inputData.get(chatId);
@@ -193,8 +218,16 @@ public class TransactionService {
         }
         catch (DataAccessException e){
             generalMessageService.sendMessage(chatId, "Не удалось сохранить историю транзакции.");
-            logger.info("Не удалось занести данные о транзакции пользователя {} в БД", tgId);
+            logger.error("""
+                    \n
+                    ====================================================================================================
+                    Не удалось занести данные о транзакции пользователя в БД
+                    Пользователь: {}
+                    ====================================================================================================
+                    \n
+                    """, tgId, e);
         }
         statusMap.put(chatId, Status.DEFAULT);
+        scenarioMap.put(chatId, Scenario.NOTHING);
     }
 }

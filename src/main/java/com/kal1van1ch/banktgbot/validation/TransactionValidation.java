@@ -10,6 +10,6 @@ public class TransactionValidation {
     }
 
     public boolean isValidPhoneNumber(String phoneNumber){
-        return phoneNumber.matches("^\\d{10}$");
+        return phoneNumber.matches("^\\d{11}$");
     }
 }

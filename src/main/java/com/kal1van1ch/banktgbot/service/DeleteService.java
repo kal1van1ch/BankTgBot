@@ -1,5 +1,6 @@
 package com.kal1van1ch.banktgbot.service;
 
+import com.kal1van1ch.banktgbot.model.Scenario;
 import com.kal1van1ch.banktgbot.model.Status;
 import com.kal1van1ch.banktgbot.model.entity.User;
 import com.kal1van1ch.banktgbot.repository.TransactionRepository;
@@ -49,7 +50,7 @@ public class DeleteService {
 
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup(keyboardRows);
 
-        generalMessageService.sendInlineButtonMessage(
+        generalMessageService.sendButtonMessage(
                 chatId,
                 message,
                 markup
@@ -62,6 +63,7 @@ public class DeleteService {
     public void delete(
             long chatId,
             Map<Long, Status> statusMap,
+            Map<Long, Scenario> scenarioMap,
             String text,
             String tgId
     ){
@@ -77,10 +79,18 @@ public class DeleteService {
                 generalMessageService.sendMessage(chatId, "Аккаунт был успешно удалён");
             }
             catch (Exception e){
-                logger.error("При попытке удалить пользователя с tgId {} произошла внутренняя ошибка", tgId, e);
+                logger.error("""
+                    \n
+                    ====================================================================================================
+                    При попытке удалить пользователя произошла внутренняя ошибка
+                    tgId: {}
+                    ====================================================================================================
+                    \n
+                    """, tgId, e);
                 generalMessageService.sendMessage(chatId, "Произошла внутрення ошибка");
             }
         }
         statusMap.put(chatId, Status.DEFAULT);
+        scenarioMap.put(chatId, Scenario.NOTHING);
     }
 }

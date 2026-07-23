@@ -1,10 +1,15 @@
 package com.kal1van1ch.banktgbot.service;
 
 import com.kal1van1ch.banktgbot.error.SHA256Exception;
+import com.kal1van1ch.banktgbot.model.Scenario;
 import com.kal1van1ch.banktgbot.model.Status;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -19,9 +24,38 @@ import java.util.Map;
 @Service
 public class GeneralMessageService {
     private final TelegramClient telegramClient;
+    private final static Logger logger = LoggerFactory.getLogger(GeneralMessageService.class);
 
     public GeneralMessageService(TelegramClient telegramClient){
         this.telegramClient = telegramClient;
+    }
+
+    public void executeMessageSend(
+            SendMessage message,
+            String methodName,
+            long chatId
+    ){
+        try{
+            telegramClient.execute(message);
+        }
+        catch (TelegramApiException e){
+            logger.error("""
+                    \n
+                    ====================================================================================================
+                    Произошла ошибка при попытке отправки сообщения
+                    Метод: {}
+                    Чат: {}
+                    ====================================================================================================
+                    \n
+                    """, methodName, chatId, e);
+        }
+    }
+
+    public String getMethodName(){
+        return StackWalker.getInstance()
+                .walk(frames -> frames.skip(1).findFirst())
+                .map(StackWalker.StackFrame::getMethodName)
+                .orElse("unknown");
     }
 
     public void unknownMessage(
@@ -32,12 +66,12 @@ public class GeneralMessageService {
                 .chatId(chatId)
                 .text("Неизвестная команда. Для перезапуска бота используйте команду /start")
                 .build();
-        try{
-            telegramClient.execute(message);
-        }
-        catch (TelegramApiException e){
-            e.printStackTrace();
-        }
+
+        executeMessageSend(
+                message,
+                getMethodName(),
+                chatId
+        );
     }
 
     public void sendMessage(
@@ -49,17 +83,18 @@ public class GeneralMessageService {
                 .chatId(chatId)
                 .text(text)
                 .build();
-        try{
-            telegramClient.execute(message);
-        }
-        catch (TelegramApiException e){
-            e.printStackTrace();
-        }
+
+        executeMessageSend(
+                message,
+                getMethodName(),
+                chatId
+        );
     }
 
     public void helpMessage(
-            Long chatId,
-            Map<Long, Status> statusMap
+            long chatId,
+            Map<Long, Status> statusMap,
+            Map<Long, Scenario> scenarioMap
     ){
         String message = """
                 Вас приветствует бот Bank, созданный для удобных операций по переводу денежных средств.
@@ -77,10 +112,11 @@ public class GeneralMessageService {
 
         sendMessage(chatId, message);
         statusMap.put(chatId, Status.DEFAULT);
+        scenarioMap.put(chatId, Scenario.NOTHING);
     }
 
-    public void sendInlineButtonMessage(
-            Long chatId,
+    public void sendButtonMessage(
+            long chatId,
             String text,
             InlineKeyboardMarkup markup
     ){
@@ -92,12 +128,50 @@ public class GeneralMessageService {
 
         message.setReplyMarkup(markup);
 
-        try{
-            telegramClient.execute(message);
-        }
-        catch (TelegramApiException e){
-            e.printStackTrace();
-        }
+        executeMessageSend(
+                message,
+                getMethodName(),
+                chatId
+        );
+    }
+
+    public void sendButtonMessage(
+            long chatId,
+            String text,
+            ReplyKeyboardMarkup markup
+    ){
+        SendMessage message = SendMessage
+                .builder()
+                .chatId(chatId)
+                .text(text)
+                .build();
+
+        message.setReplyMarkup(markup);
+
+        executeMessageSend(
+                message,
+                getMethodName(),
+                chatId
+        );
+    }
+
+    public void removeKeyboard(
+            long chatId,
+            String text
+    ){
+        SendMessage message = SendMessage
+                .builder()
+                .chatId(chatId)
+                .text(text)
+                .build();
+
+        message.setReplyMarkup(new ReplyKeyboardRemove(true));
+
+        executeMessageSend(
+                message,
+                getMethodName(),
+                chatId
+        );
     }
 
     public String encodeDataToSha256(String text){
@@ -133,11 +207,11 @@ public class GeneralMessageService {
     ){
         String message = "Выберите, что хотите изменить";
 
-        InlineKeyboardButton but1 = createButtonWithCallbackData("Имя", "FIRST_NAME");
-        InlineKeyboardButton but2 = createButtonWithCallbackData("Фамилия", "LAST_NAME");
-        InlineKeyboardButton but3 = createButtonWithCallbackData("Отчество", "PATRONYMIC");
-        InlineKeyboardButton but4 = createButtonWithCallbackData("Номер телефона", "PHONE_NUMBER");
-        InlineKeyboardButton but5 = createButtonWithCallbackData("Ничего", "NOTHING");
+        InlineKeyboardButton but1 = createButtonWithCallbackData("Имя", "FIRST_NAME_EDIT_SERVICE");
+        InlineKeyboardButton but2 = createButtonWithCallbackData("Фамилия", "LAST_NAME_EDIT_SERVICE");
+        InlineKeyboardButton but3 = createButtonWithCallbackData("Отчество", "PATRONYMIC_EDIT_SERVICE");
+        InlineKeyboardButton but4 = createButtonWithCallbackData("Номер телефона", "PHONE_NUMBER_EDIT_SERVICE");
+        InlineKeyboardButton but5 = createButtonWithCallbackData("Ничего", "NOTHING_EDIT_SERVICE");
 
         List<InlineKeyboardRow> keyboardRows = List.of(
                 new InlineKeyboardRow(but1),
@@ -149,19 +223,19 @@ public class GeneralMessageService {
 
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup(keyboardRows);
 
-        sendInlineButtonMessage(
+        sendButtonMessage(
                 chatId,
                 message,
                 markup
         );
 
-        statusMap.put(chatId, Status.EDIT_DATA);
+        statusMap.put(chatId, Status.WAITING);
     }
 
     public void waitMessage(
-            long chartId
+            long chatId
     ){
-        sendMessage(chartId, "Бот ожидает иное действие");
+        sendMessage(chatId, "Бот ожидает иное действие");
     }
 
     public InlineKeyboardButton createButtonWithCallbackData(

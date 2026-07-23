@@ -2,6 +2,7 @@ package com.kal1van1ch.banktgbot.service;
 
 import com.kal1van1ch.banktgbot.error.SHA256Exception;
 import com.kal1van1ch.banktgbot.mapper.UserMapper;
+import com.kal1van1ch.banktgbot.model.Scenario;
 import com.kal1van1ch.banktgbot.model.Status;
 import com.kal1van1ch.banktgbot.model.dto.UserDto;
 import com.kal1van1ch.banktgbot.model.entity.User;
@@ -13,7 +14,12 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -43,7 +49,7 @@ public class UserService {
     }
 
     public void registerFirstName(
-            Long chatId,
+            long chatId,
             Map<Long, Status> statusMap
     ){
         userRegisterData.put(chatId, new UserDto());
@@ -53,13 +59,21 @@ public class UserService {
     }
 
     public void registerLastName(
-            Long chatId,
+            long chatId,
             String text,
             Map<Long, Status> statusMap
     ){
         if (!userValidation.isValidFirstName(text)){
             generalMessageService.sendMessage(chatId, "Имя введено неверно, попробуйте ещё раз");
-            logger.info("Пользователь из чата {} ввёл имя в неверном формате", chatId);
+            logger.info("""
+                    \n
+                    ====================================================================================================
+                    Пользователь ввёл имя в неверном формате
+                    Чат: {}
+                    Введённое имя: {}
+                    ====================================================================================================
+                    \n
+                    """, chatId, text);
             return;
         }
 
@@ -72,14 +86,22 @@ public class UserService {
     }
 
     public void registerPatronymic(
-            Long chatId,
+            long chatId,
             String text,
             Map<Long, Status> statusMap
     ){
 
         if(!userValidation.isValidLastName(text)){
             generalMessageService.sendMessage(chatId, "Фамилия введена неверно, попробуйте ещё раз");
-            logger.info("Пользователь из чата {} ввёл фамилию в неверном формате", chatId);
+            logger.info("""
+                    \n
+                    ====================================================================================================
+                    Пользователь ввёл фамилию в неверном формате
+                    Чат: {}
+                    Введённая фамилия: {}
+                    ====================================================================================================
+                    \n
+                    """, chatId, text);
             return;
         }
 
@@ -92,40 +114,55 @@ public class UserService {
     }
 
     public void registerPhoneNumber(
-            Long chatId,
+            long chatId,
             String text,
             Map<Long, Status> statusMap
     ){
 
         if (!userValidation.isValidPatronymic(text)){
             generalMessageService.sendMessage(chatId, "Отчество введено в неверном формате, попробуйте ещё раз");
-            logger.info("Пользователь из чата {} ввёл отчество в неверном формате", chatId);
+            logger.info("""
+                    \n
+                    ====================================================================================================
+                    Пользователь ввёл отчество в неверном формате
+                    Чат: {}
+                    Введённое отчество: {}
+                    ====================================================================================================
+                    \n
+                    """, chatId, text);
             return;
         }
 
         UserDto user = userRegisterData.get(chatId);
         user.setPatronymic(text);
 
-        String message = "Введите свой номер телефона в формате \"9161112233\"";
-        generalMessageService.sendMessage(chatId, message);
-        statusMap.put(chatId, Status.TRANSFER_SUCCESSFUL_REGISTRATION);
+        KeyboardButton contactButton = KeyboardButton.builder()
+                .text("Отправить номер телефона")
+                .requestContact(true)
+                .build();
+
+        ReplyKeyboardMarkup keyboardMarkup = ReplyKeyboardMarkup.builder()
+                .keyboardRow(new KeyboardRow(List.of(contactButton)))
+                .oneTimeKeyboard(true)
+                .resizeKeyboard(true)
+                .build();
+
+        generalMessageService.sendButtonMessage(
+                chatId,
+                "Нажмите кнопку ниже, чтобы отправить номер телефона",
+                keyboardMarkup
+        );
+        statusMap.put(chatId, Status.WAITING);
     }
 
     @Transactional
     public void transferSuccessfulRegistrationMessage(
-            Long chatId,
+            long chatId,
             String text,
             Map<Long, Status> statusMap,
+            Map<Long, Scenario> scenarioMap,
             String tgId
     ){
-
-        if (!userValidation.isValidPhoneNumber(text)){
-            generalMessageService.sendMessage(chatId, "Телефон введён неверно, попробуйте ещё раз");
-            logger.info("Пользователь из чата {} ввёл номер телефона в неверном формате", chatId);
-            return;
-        }
-
-
         try{
             UserDto user = userRegisterData.get(chatId);
             String newPhoneNumber = generalMessageService.encodeDataToSha256(text);
@@ -135,23 +172,44 @@ public class UserService {
             User u = userMapper.toEntity(user);
             userRepository.save(u);
 
-            generalMessageService.sendMessage(chatId, "Регистрация прошла успешно");
-
+            generalMessageService.removeKeyboard(chatId, "Регистрация прошла успешно");
 
             userRegisterData.remove(chatId);
         }
         catch (SHA256Exception e){
-            logger.info("Ошибка при хэшировании данных в чате {} SHA-256", chatId, e);
+            logger.error("""
+                    \n
+                    ====================================================================================================
+                    Ошибка при хэшировании данных при помощи алгоритма SHA-256
+                    Чат: {}
+                    ====================================================================================================
+                    \n
+                    """, chatId, e);
             generalMessageService.sendMessage(chatId, "Внутренняя ошибка, попробуйте снова позже");
         }
         catch (DataIntegrityViolationException e){
             generalMessageService.sendMessage(chatId, "Пользователь с таким id или номеров телефона уже существует");
-            logger.info("Уже зарегистрированный пользователь {} предпринял попытку зарегистрироваться вновь", tgId);
+            logger.error("""
+                    \n
+                    ====================================================================================================
+                    Уже зарегистрированный пользователь предпринял попытку зарегистрироваться вновь
+                    Пользователь: {}
+                    ====================================================================================================
+                    \n
+                    """, tgId, e);
         }
         catch (DataAccessException e){
             generalMessageService.sendMessage(chatId, "Не удалось зарегистрироваться. Попробуйте ещё раз позже");
-            logger.info("Не удалось занести данные пользователя {} в БД", tgId);
+            logger.error("""
+                    \n
+                    ====================================================================================================
+                    Не удалось занести данные пользователя в БД
+                    Чат: {}
+                    ====================================================================================================
+                    \n
+                    """, tgId, e);
         }
         statusMap.put(chatId, Status.DEFAULT);
+        scenarioMap.put(chatId, Scenario.NOTHING);
     }
 }
