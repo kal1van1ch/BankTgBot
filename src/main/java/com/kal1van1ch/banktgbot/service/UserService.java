@@ -177,6 +177,7 @@ public class UserService {
             userRegisterData.remove(chatId);
         }
         catch (SHA256Exception e){
+            generalMessageService.sendMessage(chatId, "Внутренняя ошибка, попробуйте снова позже");
             logger.error("""
                     \n
                     ====================================================================================================
@@ -185,7 +186,6 @@ public class UserService {
                     ====================================================================================================
                     \n
                     """, chatId, e);
-            generalMessageService.sendMessage(chatId, "Внутренняя ошибка, попробуйте снова позже");
         }
         catch (DataIntegrityViolationException e){
             generalMessageService.sendMessage(chatId, "Пользователь с таким id или номеров телефона уже существует");

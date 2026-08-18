@@ -9,5 +9,4 @@ class BanktgbotApplicationTests {
 	@Test
 	void contextLoads() {
 	}
-
 }
